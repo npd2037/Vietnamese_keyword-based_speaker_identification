@@ -1,0 +1,705 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vào căn hộ{% endblock %}
+
+{% block extra_css %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    
+    <style>
+    body {
+        background-image: url("{% static 'images/background.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        height: auto;  
+        min-height: 100vh; 
+        font-family: "Segoe UI", sans-serif; 
+    }
+        
+        #toggle-btn:disabled {
+            background-color: #9ca3af; 
+            cursor: not-allowed;
+            animation: none; 
+        }
+    
+        #toggle-btn.is-listening {
+            background-color: #ef4444; 
+            animation: pulse-shadow 2s infinite;
+        }
+        #toggle-btn.is-listening:hover {
+            background-color: #dc2626;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.0);
+    
+        }
+        
+    .smart-home-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem; 
+        text-align: center; 
+    }
+
+    .smart-home-text {
+        font-size: 2.5rem; 
+        font-weight: 800; 
+        color: #1a202c; 
+        letter-spacing: -0.025em; 
+        
+        background: linear-gradient(to right, #184a9b, #26085a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15); 
+    }
+    .smart-home-name {
+        margin-top: -1.5rem; 
+        margin-bottom: 2rem; 
+        
+        text-align: center;
+        
+        display: inline-block; 
+        padding: 0.5rem 1.5rem; 
+        background: rgba(255, 255, 255, 0.25); 
+        border-radius: 9999px; 
+        border: 1px solid rgba(255, 255, 255, 0.4); 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(4px); 
+    }
+    
+    .room-label {
+        font-size: 1rem; 
+        font-weight: 500; 
+        color: #0f0636; 
+        opacity: 0.7; 
+        text-transform: uppercase; 
+        letter-spacing: 0.05em; 
+        margin-right: 0.5rem; 
+    }
+    
+    .room-id {
+        font-size: 1.25rem; 
+        font-weight: 700; 
+        color: #0f0636; 
+        
+        text-shadow: 0 0 5px rgba(15, 6, 54, 0.3);
+    }
+    .page-subtitle {
+        font-size: 1.125rem; 
+        font-weight: 500; 
+        color: #374151; 
+        line-height: 1.6; 
+        text-align: center;
+        
+        margin-bottom: 2rem; 
+    }
+    .con {
+    max-width: 800px; 
+    width: 100%; 
+    height: auto; 
+    background: rgba(255, 255, 255, 0.85); 
+    border: 4px solid #0f0636;     
+    padding: 40px 20px; 
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    margin: 0 auto;
+    }
+    .status-box {
+        width: 100%; 
+        padding: 1rem; 
+        border-radius: 0.5rem; 
+        font-size: 1.125rem; 
+        font-weight: 500;
+        margin-bottom: 0.5rem; 
+        
+    }
+
+    .status-box .status-content-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .status-box.hidden {
+        display: none;
+    }
+
+    .status-box.status-loading {
+        background-color: transparent; 
+        color: #93C5FD; 
+    }
+
+    .status-box.status-success {
+        background-color: transparent; 
+        color: #A7F3D0; 
+    }
+
+    .status-box.status-error {
+        background-color: transparent; 
+        color: #FECACA; 
+    }
+
+
+    .status-box.status-info {
+        background-color: transparent; 
+        color: #E5E7EB; 
+    }
+    .smart-owner {
+        display: inline-block; 
+        margin-top: -1.5rem;   
+        margin-bottom: 2rem;
+        text-align: center;
+        padding: 0.5rem 1.5rem; 
+        
+        background: rgba(255, 255, 255, 0.25); 
+        border-radius: 9999px; 
+        border: 1px solid rgba(255, 255, 255, 0.4); 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(4px); 
+    }
+    
+    .room-owner {
+        font-size: 1rem;    
+        font-weight: 500;
+        color: #0f0636;        
+        opacity: 0.7;          
+        text-transform: uppercase; 
+        letter-spacing: 0.05em;  
+        margin-right: 0.5rem;  
+    }
+    
+    .owner-name {
+        font-size: 1.25rem;   
+        font-weight: 700;      
+        color: #0f0636;        
+        text-shadow: 0 0 5px rgba(15, 6, 54, 0.3); 
+    }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container"> 
+    <div class="con">
+        <div class="relative flex items-center justify-center gap-3 mb-8 -mt-6 flex-wrap">
+
+            <h2 class="smart-home-name !mb-0 !mt-0"> 
+                <span class="room-label">Căn hộ số:</span>
+                <span class="room-id">{{ room.room_number }}</span> 
+            </h2>
+
+            <h2 class="smart-owner !mb-0 !mt-0">
+                <span class="room-owner">Chủ hộ:</span>
+                <span class="owner-name">{{ room.owner.name }}</span> 
+            </h2>
+
+        </div>
+        <h1 class="smart-home-title">
+            <span class="smart-home-text">Trợ Lý Ảo Căn Hộ</span>
+        </h1>
+        
+        <p class="page-subtitle magirn">
+            Nói từ khóa "QUAD TEAM ƠI" để kích hoạt và xác nhận quyền điều khiển căn hộ.
+        </p>
+
+        <div class="flex justify-center mb-6">
+            <button id="toggle-btn"
+                    class="bg-blue-900 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg transition duration-300"
+                    onclick="toggleListening()">
+                Bắt đầu nghe
+            </button>
+        </div>
+
+        <div class="status-container">
+            <div id="status" class="status-box hidden"></div>
+            <div class="flex justify-center items-center mt-2 h-8">
+                <div id="fps-display" class="text-gray-600 font-bold text-lg transition-all duration-300"></div> 
+                
+                <div id="latency-display" class="text-blue-600 font-bold text-lg hidden transition-all duration-300"></div>
+            </div>
+            <div id="features-box" class="features-box"></div>
+        </div>
+
+        <div class="flex justify-center items-center gap-4 mt-8 border-t pt-6">
+            
+            <a href="{% url 'main_page:home' %}"
+               class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                      transform hover:scale-105 transition duration-300 ease-in-out">
+                Rời khỏi căn hộ
+            </a>
+
+            <button type="button" 
+                    onclick="location.reload();"
+                    class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                           transform hover:scale-105 transition duration-300 ease-in-out">
+                Tải lại
+            </button>
+
+            <form method="get" action="{% url 'check_password:check_password_view' room.id %}" class="m-0">
+                <button type="submit"
+                        class="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600
+                               text-white font-semibold py-3 px-8 rounded-full text-lg shadow-md
+                               transform hover:scale-105 transition duration-300 ease-in-out">
+                    Thêm thành viên
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        const ONNX_MODEL_PATH = "{% static 'model/model1/model1.onnx' %}";
+        const ROOM_ID = "{{ room.id }}";
+        const VERIFY_URL = "{% url 'action_room:verify_voice' %}";
+        const TARGET_SR = 16000;
+        const TARGET_LENGTH = 40000;
+        const N_FFT = 400;
+        const HOP_LENGTH = 160;
+        const THRESHOLD = 0.6;
+
+        let ortSession;
+        let isListening = false;
+        let audioContext;
+        let micStream;
+        let scriptProcessor;
+        let audioBuffer = new Float32Array(0);
+
+        const statusDiv = document.getElementById('status');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const featuresBox = document.getElementById('features-box');
+
+        const fpsDisplay = document.getElementById('fps-display');
+        let frameCount = 0;
+        let fpsInterval;
+
+        async function resampleAudio(audioBuffer, targetSampleRate) {
+            if (audioBuffer.sampleRate === targetSampleRate) {
+                return audioBuffer.getChannelData(0);
+            }
+            const duration = audioBuffer.duration;
+            const offlineContext = new OfflineAudioContext(
+                1, Math.ceil(duration * targetSampleRate), targetSampleRate
+            );
+            const bufferSource = offlineContext.createBufferSource();
+            bufferSource.buffer = audioBuffer;
+            bufferSource.connect(offlineContext.destination);
+            bufferSource.start();
+            const resampledBuffer = await offlineContext.startRendering();
+            return resampledBuffer.getChannelData(0);
+        }
+
+        function padOrCut(data, length) {
+            if (data.length > length) {
+                return data.slice(0, length);
+            } else if (data.length < length) {
+                const paddedData = new Float32Array(length).fill(0);
+                paddedData.set(data);
+                return paddedData;
+            }
+            return data;
+        }
+
+        async function computeSpectrogram(data) {
+            const padWidth = N_FFT / 2;
+            const inputTensor = tf.tensor1d(data);
+            const paddedTensor = tf.mirrorPad(inputTensor, [[padWidth, padWidth]], 'reflect');
+            const stft = tf.signal.stft(
+                paddedTensor, N_FFT, HOP_LENGTH, N_FFT, tf.signal.hannWindow
+            );
+            const powerSpec = tf.square(tf.abs(stft));
+            const transposedSpec = powerSpec.transpose([1, 0]);
+            inputTensor.dispose();
+            paddedTensor.dispose();
+            stft.dispose();
+            powerSpec.dispose();
+            return transposedSpec;
+        }
+
+        async function runOnnxModel(spectrogramTensor) {
+            const specData = await spectrogramTensor.data();
+            const dims = spectrogramTensor.shape;
+            const ortTensor = new ort.Tensor('float32', specData, [1, ...dims]);
+            const inputs = { 'spectrogram': ortTensor };
+            const results = await ortSession.run(inputs);
+            const logit = results.logits.data[0];
+            const probability = 1 / (1 + Math.exp(-logit));
+            console.log(probability);
+            const prediction = probability > THRESHOLD ? "True" : "False";
+            spectrogramTensor.dispose();
+            return [prediction, probability];
+        }
+
+        function updateStatus(message, type) {
+            featuresBox.innerHTML = "";
+            statusDiv.classList.remove('hidden', 'bg-gray-50', 'bg-blue-100', 'bg-green-100', 'bg-red-100', 'text-gray-800', 'text-blue-800', 'text-green-800', 'text-red-800');
+            let baseClass = 'p-4 rounded-lg text-lg';
+            let typeClass = '';
+            let icon = '';
+            if (type === 'loading') {
+                typeClass = 'bg-blue-100 text-blue-800';
+                icon = `<svg class="animate-spin h-5 w-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            } else if (type === 'success') {
+                typeClass = 'bg-white/0 text-blue-800';
+            } else if (type === 'error') {
+                typeClass = 'bg-red-100 text-red-800';
+                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            } else { 
+                typeClass = 'bg-gray-100 text-gray-800';
+                icon = `<svg class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`;
+            }
+            statusDiv.className = `${baseClass} ${typeClass}`;
+            statusDiv.innerHTML = `<div class="flex items-center justify-center">${icon} <span>${message}</span></div>`;
+        }
+
+
+        async function loadModel() {
+            toggleBtn.disabled = true;
+            try {
+                updateStatus('Đang tải model ONNX...', "loading");
+                ortSession = await ort.InferenceSession.create(ONNX_MODEL_PATH);
+                
+                updateStatus('Model đã sẵn sàng. Nhấn "Bắt đầu nghe" để chạy.', "info");
+                toggleBtn.disabled = false;
+            } catch (e) {
+                updateStatus(`Lỗi khi tải model: ${e.message}`, "error");
+            }
+        }
+        
+        function toggleListening() {
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        }
+
+        async function startListening() {
+            if (!ortSession) {
+                updateStatus("Lỗi: Model chưa được tải.", "error");
+                return;
+            }
+            try {
+                const fpsDiv = document.getElementById('fps-display');
+                const latDiv = document.getElementById('latency-display');
+                if (fpsDiv) fpsDiv.classList.remove('hidden');
+                if (latDiv) latDiv.classList.add('hidden');
+
+                updateStatus("Yêu cầu quyền truy cập micro...", "loading");
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                scriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                scriptProcessor.onaudioprocess = processAudioChunk;
+                const source = audioContext.createMediaStreamSource(micStream);
+                source.connect(scriptProcessor);
+                scriptProcessor.connect(audioContext.destination);
+                isListening = true;
+
+                frameCount = 0;
+                if (fpsInterval) clearInterval(fpsInterval); 
+                fpsInterval = setInterval(() => {
+                    if (fpsDisplay) {
+                        fpsDisplay.textContent = `FPS: ${frameCount}`;
+                    }
+                    frameCount = 0; 
+                }, 1000); 
+
+                runInference();
+
+                toggleBtn.textContent = "Dừng nghe";
+
+                toggleBtn.classList.add('is-listening');
+                
+                updateStatus("Đang nghe...", "loading");
+
+            } catch (e) {
+                updateStatus(`Lỗi micro: ${e.message}. Vui lòng cấp quyền truy cập.`, "error");
+            }
+        }
+
+        function stopListening() {
+            if (!isListening) return;
+
+            isListening = false; 
+
+            if (fpsInterval) {
+                clearInterval(fpsInterval);
+                fpsInterval = null;
+            }
+            if (fpsDisplay) {
+                fpsDisplay.textContent = ""; 
+            }
+
+            try {
+                if (scriptProcessor) {
+                    scriptProcessor.disconnect();
+                    scriptProcessor = null;
+                }
+                if (micStream) {
+                    micStream.getTracks().forEach(track => track.stop());
+                    micStream = null;
+                }
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close();
+                    audioContext = null;
+                }
+
+                audioBuffer = new Float32Array(0);
+                
+                toggleBtn.textContent = "Bắt đầu nghe";
+                toggleBtn.classList.remove('is-listening');
+                
+                toggleBtn.disabled = false; 
+                
+                updateStatus("Đã dừng. Nhấn 'Bắt đầu' để nghe lại.", "info");
+
+            } catch (e) {
+                console.error("Lỗi khi dừng:", e);
+                updateStatus("Đã dừng.", "info");
+            }
+        }
+
+        function processAudioChunk(event) {
+            if (!isListening) return;
+            const newChunk = event.inputBuffer.getChannelData(0);
+            const newBuffer = new Float32Array(audioBuffer.length + newChunk.length);
+            newBuffer.set(audioBuffer);
+            newBuffer.set(newChunk, audioBuffer.length);
+            audioBuffer = newBuffer;
+            const maxBufferLength = (audioContext.sampleRate * 5); 
+            if (audioBuffer.length > maxBufferLength) {
+                audioBuffer = audioBuffer.slice(audioBuffer.length - maxBufferLength);
+            }
+        }
+
+        async function runInference() {
+            if (!isListening) return;
+
+            if (!audioContext || audioContext.state === 'closed') {
+                console.warn("AudioContext đã đóng, dừng vòng lặp.");
+                stopListening();
+                return;
+            }
+
+            const requiredNativeSamples = Math.floor(TARGET_LENGTH * (audioContext.sampleRate / TARGET_SR));
+            
+            if (audioBuffer.length < requiredNativeSamples) {
+                updateStatus("Đang nghe...", "loading");
+                if (isListening) {
+                    setTimeout(runInference, 100); 
+                }
+                return;
+            }
+
+            if (!isListening || !audioContext || audioContext.state === 'closed') {
+                return;
+            }
+
+            const startTime = performance.now();
+            const audioChunk = audioBuffer.slice(audioBuffer.length - requiredNativeSamples);
+            toggleBtn.disabled = true;
+            updateStatus("Đang phân tích...", "loading");
+
+
+            try {
+                if (!isListening || !audioContext || audioContext.state === 'closed') {
+                    if (!isListening) toggleBtn.disabled = false;
+                    return;
+                }
+                
+                const bufferToResample = audioContext.createBuffer(1, audioChunk.length, audioContext.sampleRate);
+                bufferToResample.copyToChannel(audioChunk, 0);
+                
+                const currentSampleRate = audioContext.sampleRate;
+
+                const resampledData = await resampleAudio(bufferToResample, TARGET_SR);
+                const processedData = padOrCut(resampledData, TARGET_LENGTH);
+                const spectrogramTensor = await computeSpectrogram(processedData);
+
+                if (!isListening) {
+                    spectrogramTensor.dispose(); 
+                    return;
+                }
+
+                const [prediction, probability] = await runOnnxModel(spectrogramTensor);
+                frameCount++;
+                
+                if (prediction === "True" && probability > THRESHOLD) {
+                    const localTime = (performance.now() - startTime).toFixed(0);
+                    updateStatus(
+                        `<strong>Phát hiện từ khóa!</strong> (Xác suất: ${(probability * 100).toFixed(2)}%)<br>
+                         🔄 Đang gửi tới Model2 (xác thực người nói)...`,
+                        "loading"
+                    );
+                    
+                    stopListening(); 
+
+                    try {
+                        const wavBlob = await exportWavBlob(audioChunk, currentSampleRate); 
+                        const formData = new FormData();
+                        formData.append("audio", wavBlob, "captured.wav");
+                        formData.append("room_id", ROOM_ID);
+
+                        const response = await fetch(VERIFY_URL, { 
+                            method: "POST",
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        const endTime = performance.now(); 
+                        const totalTime = (endTime - startTime).toFixed(0); 
+
+                        const fpsDiv = document.getElementById('fps-display');
+                        if (fpsDiv) fpsDiv.classList.add('hidden');
+
+                        const latDiv = document.getElementById('latency-display');
+                        if(latDiv) {
+                            latDiv.innerHTML = `⏱ ${totalTime} ms`;
+                            latDiv.classList.remove('hidden'); 
+                        }
+
+                        if (data.error) {
+                            updateStatus(`❌ Lỗi: ${data.error}`, "error");
+                        } else {
+                            let tableHtml = `
+                                <div class="overflow-x-auto">
+                                <table class="mt-6 bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+                                    <thead>
+                                        <tr class="bg-blue-100 border-b border-blue-200">
+                                            
+                                            <th class="py-2 px-3 border-r border-blue-200 text-black">Tên Thành Viên</th>
+                                            
+                                            <th class="py-2 px-3 border-r border-blue-200 text-center text-black">Độ Tương Đồng</th>
+                                            
+                                            <th class="py-2 px-3 text-center text-black">Kết quả</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${data.results.map(r => `
+                                            <tr class="border-b border-blue-200 hover:bg-blue-50">
+                                                
+                                                <td class="py-2 px-3 font-medium text-black">${r.name}${r.is_owner ? ` (Chủ hộ)` : ""}</td>
+                                                
+                                                <td class="py-2 px-3 text-center text-black">${r.similarity.toFixed(4)}</td>
+                                                <td class="py-2 px-3 text-center">
+                                                    ${r.is_match ? "✅" : "❌"}
+                                                </td>
+                                            </tr>
+                                        `).join("")}
+                                    </tbody>
+                                </table>
+                                </div>
+                            `;
+                            updateStatus(tableHtml, "success");
+
+                            if (data.matched_member && data.functions && data.functions.length > 0) {
+                                setTimeout(() => {
+                                    const gradientColors = [
+                                        "from-red-400 to-red-500",
+                                        "from-green-400 to-green-500",
+                                        "from-blue-400 to-blue-500",
+                                        "from-pink-400 to-pink-500",
+                                        "from-orange-400 to-orange-500",
+                                        "from-teal-400 to-teal-500"
+                                    ];
+
+                                    const deviceCards = data.functions.map((f, i) => `
+                                        <div class="bg-gradient-to-br ${gradientColors[i % gradientColors.length]} 
+                                                       text-white font-semibold rounded-xl shadow-md flex items-center justify-center 
+                                                       w-28 h-14 sm:w-32 sm:h-16 hover:scale-105 hover:shadow-lg transform transition-all duration-300 ease-in-out">
+                                            ${f}
+                                        </div>
+                                    `).join("");
+
+                                    featuresBox.innerHTML = `
+                                        <div class="mt-6 bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+                                            <h3 class="text-xl font-bold mb-5 text-black-700 text-center">
+                                                Quyền truy cập vào các thiết bị của ${data.matched_member}
+                                            </h3>
+                                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 justify-items-center place-items-center">
+                                                ${deviceCards}
+                                            </div>
+                                        </div>
+                                    `;
+                                }, 200);
+                            } else {
+                                featuresBox.innerHTML = `<p class="text-gray-500 mt-4 italic">Không có thiết bị nào được phân quyền.</p>`;
+                            }
+
+                            
+                            toggleBtn.disabled = false;
+                            toggleBtn.textContent = `Bắt đầu nghe`;
+                            toggleBtn.classList.remove('is-listening');
+                        }
+
+                    } catch (err) {
+                        console.error("Lỗi khi gửi giọng nói:", err);
+                        updateStatus(`🔥 Lỗi khi xác thực giọng nói: ${err.message}`, "error");
+                        toggleBtn.disabled = false;
+                        toggleBtn.textContent = `Bắt đầu nghe`;
+                        toggleBtn.classList.remove('is-listening');
+                    }
+
+                } else {
+                    updateStatus("Đang nghe...", "loading");
+                    toggleBtn.disabled = false;
+
+                    const latencyDiv = document.getElementById('latency-display');
+                    if(latencyDiv) latencyDiv.innerText = "";
+
+                    if (isListening) {
+                        setTimeout(runInference, 0);
+                    }
+                }
+
+            } catch (e) {
+                console.error("Lỗi trong vòng lặp dự đoán:", e.message);
+                
+                if (isListening) {
+                    updateStatus(`Lỗi dự đoán: ${e.message}. Đang thử lại...`, "error");
+                    toggleBtn.disabled = false;
+                    setTimeout(runInference, 0);
+                } else {
+                    toggleBtn.disabled = false;
+                }
+            }
+        }
+
+        async function exportWavBlob(float32Array, sampleRate) {
+            const buffer = new ArrayBuffer(44 + float32Array.length * 2);
+            const view = new DataView(buffer);
+            const writeString = (offset, str) => {
+                for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+            };
+            writeString(0, "RIFF");
+            view.setUint32(4, 36 + float32Array.length * 2, true);
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, "data");
+            view.setUint32(40, float32Array.length * 2, true);
+            let offset = 44;
+            for (let i = 0; i < float32Array.length; i++, offset += 2) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            return new Blob([buffer], { type: "audio/wav" });
+        }
+
+        loadModel();
+
+    </script>
+{% endblock %}

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Đăng ký thành viên{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-image: url("{% static 'images/background.jpg' %}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+
+        height: auto;  
+        min-height: 100vh; 
+
+        font-family: "Segoe UI", sans-serif; 
+    }
+
+    header {
+        background-color: #007BFF;
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        text-align: center;
+        padding: 30px 0;
+    }
+
+    .instruction {
+        text-align: center;
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    .audio-section {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px auto;
+        width: 90%;
+    }
+
+    .audio-box {
+        background-color: white;
+        border: 2px solid #007BFF;
+        border-radius: 12px;
+        padding: 20px;
+        width: 30%;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .audio-box h3 {
+        margin-top: 0;
+        color: #01254e;
+    }
+
+    .audio-box button {
+        background-color: #327bcf;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .audio-box button.recording {
+        background-color: red;
+    }
+
+    .spacer { height: 40px; }
+
+    .button-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 60%;
+        margin: 0 auto;
+    }
+
+    .button-grid button {
+        width: 100%;
+        padding: 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .btn1 { background-color: #FF5733; font-weight: bold;}
+    .btn2 { background-color: #33FF57; font-weight: bold; }
+    .btn3 { background-color: #3357FF; font-weight: bold;}
+    .btn4 { background-color: #FF33A1; font-weight: bold; }
+    .btn5 { background-color: #FF8C33; font-weight: bold;}
+    .btn6 { background-color: #33FFF2; font-weight: bold;}
+
+    .off { filter: brightness(0.6) grayscale(0.3); }
+
+    .corner-button {
+        position: fixed;
+        bottom: 20px;
+        padding: 15px 25px;
+        font-size: 18px;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+    }
+
+    .bottom-right { right: 20px; background-color: #007BFF; font-weight: bold; }
+    .bottom-left { left: 20px; background-color: red; font-weight: bold; text-decoration: none;}
+    
+    .container {
+        background: rgba(255, 255, 255, 0.85); 
+        width: 80%;
+        border: 4px solid #0f0636;       
+        padding: 40px 70px; 
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        text-align: center;
+        box-sizing: border-box; 
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            width: 90%;
+            padding: 40px 20px; 
+        }
+    }
+    .audio-box > * {
+        margin-bottom: 12px;
+    }
+    .page-header {
+        color: #150369;
+        font-size: 35px; 
+        font-weight: bold; 
+        text-align: center;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .name-input {
+        width: 100%;
+        margin: 20px auto 0; 
+        text-align: center; 
+        padding: 25px 30px; 
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .name-input input {
+        width: 80%; 
+        box-sizing: border-box; 
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 17px;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease; 
+    }
+    .name-input input::placeholder {
+        color: #06014e;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <form id="memberForm" method="POST" enctype="multipart/form-data" 
+        action="{% url 'member_registering_page:submit_all' %}">
+        {% csrf_token %}
+        
+        <h3 class="page-header">Đăng ký thành viên</h3>
+
+        <div class="name-input">
+            <input type="text" name="name" id="username" placeholder="Nhập tên của bạn..." required>
+        </div>
+
+        <div class="instruction" 
+            style="color: #0e0246; 
+                   font-weight: bold; 
+                   font-size: 23px;
+                   text-align: center; 
+                   border-radius: 10px;
+                   max-width: 700px; 
+                   margin: 0px auto;">
+            Hãy đọc theo các cụm sau đây để thực hiện đăng ký quyền
+        </div>
+
+        <div class="audio-section">
+            <div class="audio-box" id="rec1">
+                <h3>“Quad team ơi”</h3>
+                <button type="button" onclick="toggleRecord(1)">Bắt đầu thu</button>
+                <audio controls id="player1" style="display:none;"></audio>
+                <input type="file" id="audioInput1" name="audio1" style="display:none;">
+            </div>
+            <div class="audio-box" id="rec2">
+                <h3>“Mở lên Quad team ơi”</h3>
+                <button type="button" onclick="toggleRecord(2)">Bắt đầu thu</button>
+                <audio controls id="player2" style="display:none;"></audio>
+                <input type="file" id="audioInput2" name="audio2" style="display:none;">
+            </div>
+            <div class="audio-box" id="rec3">
+                <h3>“Quad team ơi thế nào”</h3>
+                <button type="button" onclick="toggleRecord(3)">Bắt đầu thu</button>
+                <audio controls id="player3" style="display:none;"></audio>
+                <input type="file" id="audioInput3" name="audio3" style="display:none;">
+            </div>
+        </div>
+
+        <div class="instruction" 
+            style="color: #0e0246; 
+                   font-weight: bold; 
+                   font-size: 23px;
+                   text-align: center; 
+                   border-radius: 10px;
+                   max-width: 800px; 
+                   margin: 20px auto;">
+            Chọn các thiết bị được phép điều khiển
+        </div>
+
+        <div class="button-grid">
+            <button type="button" class="btn1 off" onclick="toggleBtn(1)">Bếp</button>
+            <button type="button" class="btn2 off" onclick="toggleBtn(2)">Ti vi</button>
+            <button type="button" class="btn3 off" onclick="toggleBtn(3)">Máy lạnh</button>
+            <button type="button" class="btn4 off" onclick="toggleBtn(4)">Quạt</button>
+            <button type="button" class="btn5 off" onclick="toggleBtn(5)">Cửa</button>
+            <button type="button" class="btn6 off" onclick="toggleBtn(6)">Đèn</button>
+        </div>
+
+        <input type="hidden" name="buttons" id="buttonsInput" value="[0,0,0,0,0,0]">
+
+        <div id="formMessage" style="color: red; font-weight: bold; margin-top: 20px;"></div>
+
+        <button type="submit" class="corner-button bottom-right">Đăng ký</button>
+        <a href="{% url 'member_registering_page:go_back' %}" class="corner-button bottom-left">Quay lại</a>
+
+    </form>
+</div>
+
+<script>
+let recorders = {};
+let audioChunks = {};
+let streams = {};
+let audioBlobs = {}; 
+let buttonStates = [0,0,0,0,0,0];
+
+document.getElementById('memberForm').addEventListener('submit', function(e){
+    e.preventDefault();
+
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const name = document.getElementById("username").value.trim();
+    if (!name) {
+        document.getElementById('formMessage').textContent = "Vui lòng nhập tên.";
+        return;
+    }
+
+    fetch("{% url 'member_registering_page:submit_all' %}", {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const msgDiv = document.getElementById('formMessage');
+        if(data.success){
+            msgDiv.style.color = 'green';
+            msgDiv.textContent = data.message || "Đăng ký thành công!";
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            }
+        } else {
+            msgDiv.style.color = 'red';
+            msgDiv.textContent = data.error || data.message || "Có lỗi xảy ra.";
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('formMessage').textContent = "Lỗi kết nối.";
+    });
+});
+
+async function toggleRecord(id) {
+    const btn = document.querySelector(`#rec${id} button`);
+    const player = document.querySelector(`#player${id}`);
+    const input = document.querySelector(`#audioInput${id}`);
+
+    if (!recorders[id]) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            streams[id] = stream;
+            const recorder = new MediaRecorder(stream);
+            audioChunks[id] = [];
+
+            recorder.ondataavailable = e => audioChunks[id].push(e.data);
+            
+            recorder.onstop = () => {
+                const blob = new Blob(audioChunks[id], { type: 'audio/webm' });
+                
+                const file = new File([blob], `sample${id}.webm`, { type: 'audio/webm' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                input.files = dataTransfer.files;
+
+                audioBlobs[id] = blob;
+                const url = URL.createObjectURL(blob);
+                player.src = url;
+                player.style.display = 'block';
+                player.onplay = () => { 
+                    setTimeout(() => player.pause(), 2500); 
+                };
+            };
+
+            recorder.start();
+            recorders[id] = recorder;
+            btn.textContent = "Đang thu...";
+            btn.classList.add("recording");
+
+            setTimeout(() => {
+                if (recorders[id]) {
+                    recorders[id].stop();
+                    streams[id].getTracks().forEach(track => track.stop());
+                    recorders[id] = null;
+                    btn.textContent = "Bắt đầu thu";
+                    btn.classList.remove("recording");
+                }
+            }, 2500);
+
+        } catch (err) {
+            alert("Không truy cập được micro: " + err.message);
+        }
+    } else {
+        recorders[id].stop();
+        streams[id].getTracks().forEach(track => track.stop());
+        recorders[id] = null;
+        btn.textContent = "Bắt đầu thu";
+        btn.classList.remove("recording");
+    }
+}
+
+function toggleBtn(i) {
+    const btn = document.querySelector(`.btn${i}`);
+    buttonStates[i-1] = 1 - buttonStates[i-1]; 
+    btn.classList.toggle("off");
+    
+    document.getElementById('buttonsInput').value = JSON.stringify(buttonStates);
+}
+
+</script>
+{% endblock %}
